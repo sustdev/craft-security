@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace sustdev\security\Csp;
 
+use InvalidArgumentException;
+
 /**
  * Composes a Content-Security-Policy from a shared base plus named service sets.
  *
@@ -20,7 +22,7 @@ namespace sustdev\security\Csp;
  *
  *   use sustdev\security\Csp\CspBuilder;
  *
- *   $csp = CspBuilder::make($isDev, $isProduction)
+ *   $csp = CspBuilder::make($isDev)
  *       ->reportUri($sentryCspReportUri)
  *       ->use('google-tag-manager')
  *       ->use('google-analytics')
@@ -63,6 +65,9 @@ final class CspBuilder
         'worker-src',
     ];
 
+    /** Reporting API group name; shared by the report-to directive and the header. */
+    private const REPORT_GROUP = 'csp-endpoint';
+
     /** @var array<string, list<string>> directive => tokens */
     private array $directives;
 
@@ -73,7 +78,6 @@ final class CspBuilder
 
     public function __construct(
         private readonly bool $isDev = false,
-        private readonly bool $isProduction = false,
     ) {
         $this->directives = [
             'default-src' => ["'self'"],
@@ -94,9 +98,9 @@ final class CspBuilder
         ];
     }
 
-    public static function make(bool $isDev = false, bool $isProduction = false): self
+    public static function make(bool $isDev = false): self
     {
-        return new self($isDev, $isProduction);
+        return new self($isDev);
     }
 
     /**
@@ -115,9 +119,19 @@ final class CspBuilder
 
     /**
      * Add one or more host tokens to a directive (project specific hosts).
+     * The directive must be a known name, so a typo fails loudly instead of
+     * silently dropping the host from the final policy.
      */
     public function add(string $directive, string ...$hosts): self
     {
+        if (!in_array($directive, self::ORDER, true)) {
+            throw new InvalidArgumentException(sprintf(
+                'Unknown CSP directive "%s". Known directives: %s.',
+                $directive,
+                implode(', ', self::ORDER),
+            ));
+        }
+
         $this->directives[$directive] = array_merge(
             $this->directives[$directive] ?? [],
             $hosts,
@@ -170,14 +184,14 @@ final class CspBuilder
      * JSON value for a Report-To response header pointing at the report endpoint.
      * Returns null when no report URI is set.
      */
-    public function reportToHeader(string $group = 'csp-endpoint', int $maxAge = 31536000): ?string
+    public function reportToHeader(int $maxAge = 31536000): ?string
     {
         if ($this->reportUri === null) {
             return null;
         }
 
         return json_encode([
-            'group' => $group,
+            'group' => self::REPORT_GROUP,
             'max_age' => $maxAge,
             'endpoints' => [['url' => $this->reportUri]],
             'include_subdomains' => true,
@@ -211,7 +225,7 @@ final class CspBuilder
 
         if ($this->reportUri !== null) {
             $result[] = [true, 'report-uri', $this->reportUri];
-            $result[] = [true, 'report-to', 'csp-endpoint'];
+            $result[] = [true, 'report-to', self::REPORT_GROUP];
         }
 
         return $result;

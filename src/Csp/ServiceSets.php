@@ -120,6 +120,11 @@ final class ServiceSets
             'google-maps' => [
                 'script-src' => ['maps.googleapis.com'],
                 'style-src' => ["'unsafe-inline'"],
+                // Enumerate the specific Maps hosts. A broad '*.googleapis.com'
+                // is deliberately avoided: it also covers storage.googleapis.com
+                // (multi-tenant GCS buckets), a known CSP-allowlist bypass. If
+                // Maps needs another exact googleapis subdomain, report-only will
+                // surface it and it gets added here specifically.
                 'img-src' => [
                     'maps.googleapis.com',
                     'maps.gstatic.com',
@@ -127,9 +132,8 @@ final class ServiceSets
                     'khms1.googleapis.com',
                     'streetviewpixels-pa.googleapis.com',
                     '*.ggpht.com',
-                    '*.googleapis.com',
                 ],
-                'connect-src' => ['maps.googleapis.com', '*.googleapis.com'],
+                'connect-src' => ['maps.googleapis.com'],
                 'frame-src' => ['www.google.com'],
             ],
 

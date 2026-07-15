@@ -53,7 +53,7 @@ use sustdev\security\Csp\CspBuilder;
 $isDev = App::env('CRAFT_ENVIRONMENT') === 'dev';
 $isProduction = App::env('CRAFT_ENVIRONMENT') === 'production';
 
-$csp = CspBuilder::make($isDev, $isProduction)
+$csp = CspBuilder::make($isDev)
     ->reportUri('https://oNNN.ingest.de.sentry.io/api/NNN/security/?sentry_key=...')
     ->use('google-tag-manager')
     ->use('google-analytics')

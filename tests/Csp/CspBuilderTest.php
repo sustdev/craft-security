@@ -93,7 +93,7 @@ final class CspBuilderTest extends TestCase
     {
         $hash = "'sha256-abc123'";
 
-        $prod = $this->directiveMap(CspBuilder::make(isDev: false, isProduction: true)->scriptHash($hash));
+        $prod = $this->directiveMap(CspBuilder::make(isDev: false)->scriptHash($hash));
         self::assertStringContainsString($hash, $prod['script-src']);
         self::assertStringNotContainsString("'unsafe-inline'", $prod['script-src']);
 
@@ -129,7 +129,9 @@ final class CspBuilderTest extends TestCase
         // json_encode escapes slashes, so decode rather than substring-match.
         $decoded = json_decode($header, true);
         self::assertSame($uri, $decoded['endpoints'][0]['url']);
-        self::assertSame('csp-endpoint', $decoded['group']);
+        // The header group must match the report-to directive value, or the
+        // browser silently drops reports.
+        self::assertSame($map['report-to'], $decoded['group']);
     }
 
     public function testReportToHeaderNullWithoutReportUri(): void
@@ -141,5 +143,21 @@ final class CspBuilderTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         CspBuilder::make()->use('not-a-real-service');
+    }
+
+    public function testUsingAServiceDoesNotResolveAnUnrelatedRequiredHost(): void
+    {
+        // Regression guard: requesting any service must not eagerly resolve a
+        // different host-required service (active-campaign has no default host).
+        $map = $this->directiveMap(CspBuilder::make()->use('google-ads'));
+
+        self::assertStringContainsString('*.doubleclick.net', $map['img-src']);
+    }
+
+    public function testAddRejectsUnknownDirective(): void
+    {
+        // A typo must fail loudly instead of silently dropping the host.
+        $this->expectException(InvalidArgumentException::class);
+        CspBuilder::make()->add('img-scr', 'example.com');
     }
 }
