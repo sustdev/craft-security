@@ -41,12 +41,28 @@ final class ServiceSetsTest extends TestCase
             'mouseflow',
             'trustpilot',
             'cdnjs',
+            'jsdelivr',
+            'jquery',
             'youtube',
+            'gravatar',
+            'google-user-content',
+            'google-apps-script',
+            'ipify',
             'plausible',
+            'active-campaign',
             'sentry-sdk',
         ] as $expected) {
             self::assertContains($expected, $names);
         }
+    }
+
+    public function testActiveCampaignRequiresHost(): void
+    {
+        $set = ServiceSets::get('active-campaign', ['host' => 'account.activehosted.com']);
+        self::assertContains('account.activehosted.com', $set['connect-src']);
+
+        $this->expectException(InvalidArgumentException::class);
+        ServiceSets::get('active-campaign');
     }
 
     public function testGa4CoversBareAnalyticsApex(): void

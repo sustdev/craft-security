@@ -12,20 +12,21 @@ use InvalidArgumentException;
  * directives at once, instead of hand-picking hosts per project.
  *
  * Only generic, publicly documented services live here. Anything project or
- * customer specific (self-hosted analytics hosts, CDN origins, sibling domains,
- * Sentry DSN keys, GTM container hashes, one-off integrations) is passed in by
- * the project through CspBuilder::add()/scriptHash(), never hardcoded here.
+ * customer specific (self-hosted analytics hosts, CDN/asset origins, sibling
+ * domains, Sentry DSN keys, GTM container hashes, a site's own frame-ancestors,
+ * broad Google static wildcards) is passed in by the project through
+ * CspBuilder::add()/scriptHash(), never hardcoded here.
  *
  * Each set maps a directive name to a list of host tokens. A service that needs
  * a keyword such as 'unsafe-inline' contributes it as a token like any host.
+ *
+ * A few services are hosted per deployment (a self-hosted analytics instance, an
+ * account-scoped SaaS subdomain). Those take a 'host' option; some have a public
+ * default, others require the host.
  */
 final class ServiceSets
 {
-    /**
-     * Services whose host depends on the deployment (e.g. a self-hosted
-     * instance). The default is the public SaaS host; a project overrides it
-     * with the 'host' option.
-     */
+    /** Host-based services with a public default host. */
     private const HOST_DEFAULTS = [
         'plausible' => 'plausible.io',
     ];
@@ -38,13 +39,17 @@ final class ServiceSets
      */
     public static function get(string $service, array $options = []): array
     {
-        $catalogue = self::catalogue($options);
+        $hostBased = self::hostBased();
+        if (isset($hostBased[$service])) {
+            return ($hostBased[$service])(self::resolveHost($service, $options));
+        }
 
+        $catalogue = self::staticCatalogue();
         if (!isset($catalogue[$service])) {
             throw new InvalidArgumentException(sprintf(
                 'Unknown CSP service "%s". Known services: %s.',
                 $service,
-                implode(', ', array_keys($catalogue)),
+                implode(', ', self::names()),
             ));
         }
 
@@ -56,19 +61,22 @@ final class ServiceSets
      */
     public static function names(): array
     {
-        return array_keys(self::catalogue());
+        return array_merge(
+            array_keys(self::staticCatalogue()),
+            array_keys(self::hostBased()),
+        );
     }
 
     /**
-     * @param array{host?: string} $options
+     * Services whose hosts are fixed public infrastructure.
+     *
      * @return array<string, array<string, list<string>>>
      */
-    private static function catalogue(array $options = []): array
+    private static function staticCatalogue(): array
     {
         return [
-            // Sentry browser SDK error/feedback ingest. The ingest hosts are
-            // generic Sentry infrastructure; the wildcards cover a project's own
-            // oNNN.ingest.<region>.sentry.io DSN host.
+            // Sentry browser SDK error/feedback ingest. The wildcards cover a
+            // project's own oNNN.ingest.<region>.sentry.io DSN host.
             'sentry-sdk' => [
                 'connect-src' => ['*.ingest.de.sentry.io', '*.ingest.us.sentry.io'],
             ],
@@ -157,8 +165,8 @@ final class ServiceSets
 
             'linkedin-insight' => [
                 'script-src' => ['snap.licdn.com'],
-                'img-src' => ['px.ads.linkedin.com', '*.ads.linkedin.com'],
-                'connect-src' => ['*.ads.linkedin.com'],
+                'img-src' => ['px.ads.linkedin.com', '*.ads.linkedin.com', '*.linkedin.com'],
+                'connect-src' => ['*.ads.linkedin.com', '*.linkedin.com'],
             ],
 
             'cookiebot' => [
@@ -188,16 +196,67 @@ final class ServiceSets
                 'font-src' => ['cdnjs.cloudflare.com'],
             ],
 
+            // jsDelivr CDN (scripts, styles, fonts, source maps).
+            'jsdelivr' => [
+                'script-src' => ['cdn.jsdelivr.net'],
+                'style-src' => ['cdn.jsdelivr.net'],
+                'font-src' => ['cdn.jsdelivr.net'],
+                'connect-src' => ['cdn.jsdelivr.net'],
+            ],
+
+            // jQuery CDN.
+            'jquery' => [
+                'script-src' => ['code.jquery.com'],
+            ],
+
             'youtube' => [
                 'img-src' => ['*.ytimg.com'],
                 'frame-src' => ['*.youtube.com', 'www.youtube-nocookie.com'],
             ],
 
+            // Gravatar avatar images.
+            'gravatar' => [
+                'img-src' => ['*.gravatar.com'],
+            ],
+
+            // Google-hosted user content (avatars, uploaded images).
+            'google-user-content' => [
+                'img-src' => ['*.googleusercontent.com'],
+            ],
+
+            // Google Apps Script webhooks. The exec URL on script.google.com
+            // redirects to script.googleusercontent.com.
+            'google-apps-script' => [
+                'connect-src' => ['script.google.com', 'script.googleusercontent.com'],
+            ],
+
+            // ipify public IP-address lookup.
+            'ipify' => [
+                'connect-src' => ['api.ipify.org', 'api64.ipify.org'],
+            ],
+        ];
+    }
+
+    /**
+     * Services hosted per deployment: the set is a closure of the resolved host.
+     *
+     * @return array<string, callable(string): array<string, list<string>>>
+     */
+    private static function hostBased(): array
+    {
+        return [
             // Plausible analytics. Defaults to the public SaaS host; a
-            // self-hosted instance passes its own host via the 'host' option.
-            'plausible' => [
-                'script-src' => [self::host('plausible', $options)],
-                'connect-src' => [self::host('plausible', $options)],
+            // self-hosted instance passes its own host.
+            'plausible' => static fn (string $host): array => [
+                'script-src' => [$host],
+                'connect-src' => [$host],
+            ],
+
+            // ActiveCampaign forms/tracking on the account subdomain
+            // (<account>.activehosted.com). No public default; host required.
+            'active-campaign' => static fn (string $host): array => [
+                'script-src' => [$host],
+                'connect-src' => [$host],
             ],
         ];
     }
@@ -205,8 +264,20 @@ final class ServiceSets
     /**
      * @param array{host?: string} $options
      */
-    private static function host(string $service, array $options): string
+    private static function resolveHost(string $service, array $options): string
     {
-        return $options['host'] ?? self::HOST_DEFAULTS[$service];
+        if (isset($options['host']) && $options['host'] !== '') {
+            return $options['host'];
+        }
+
+        if (isset(self::HOST_DEFAULTS[$service])) {
+            return self::HOST_DEFAULTS[$service];
+        }
+
+        throw new InvalidArgumentException(sprintf(
+            'CSP service "%s" requires a host, e.g. use(\'%s\', [\'host\' => \'...\']).',
+            $service,
+            $service,
+        ));
     }
 }

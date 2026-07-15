@@ -33,8 +33,18 @@ final class CspBuilderTest extends TestCase
         self::assertSame("'self'", $map['base-uri']);
         self::assertSame("'self'", $map['frame-ancestors']);
         self::assertStringContainsString('blob:', $map['worker-src']);
-        // No third-party service used, so no frame-src is emitted.
-        self::assertArrayNotHasKey('frame-src', $map);
+        // frame-src is seeded with 'self' so a later service frame host does not
+        // drop same-origin framing.
+        self::assertSame("'self'", $map['frame-src']);
+    }
+
+    public function testFrameSrcKeepsSelfWhenServiceAddsFrameHost(): void
+    {
+        $map = $this->directiveMap(CspBuilder::make()->use('youtube'));
+
+        $frameTokens = explode(' ', $map['frame-src']);
+        self::assertContains("'self'", $frameTokens);
+        self::assertContains('*.youtube.com', $frameTokens);
     }
 
     public function testGoogleAdsSpreadsTldListIntoImgAndConnect(): void

@@ -83,11 +83,16 @@ return [
 `sentry-sdk`, `google-tag-manager`, `google-analytics`, `google-ads`,
 `google-maps`, `recaptcha`, `turnstile`, `meta-pixel`, `microsoft-clarity`,
 `bing-ads`, `linkedin-insight`, `cookiebot`, `mouseflow`, `trustpilot`, `cdnjs`,
-`youtube`, `plausible`.
+`jsdelivr`, `jquery`, `youtube`, `gravatar`, `google-user-content`,
+`google-apps-script`, `ipify`, `plausible`, `active-campaign`.
 
 Each set adds its hosts to the correct directives (`ServiceSets` is the source of
-truth). `plausible` defaults to the public `plausible.io`; pass `['host' => ...]`
-for a self-hosted instance. An unknown service name throws, so a typo fails loudly.
+truth). An unknown service name throws, so a typo fails loudly.
+
+Two services are hosted per deployment and take a `['host' => ...]` option:
+`plausible` (defaults to the public `plausible.io`; pass the host for a
+self-hosted instance) and `active-campaign` (the account subdomain
+`<account>.activehosted.com`; no default, so the host is required).
 
 ### Design notes
 

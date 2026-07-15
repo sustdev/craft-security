@@ -85,6 +85,10 @@ final class CspBuilder
             'base-uri' => ["'self'"],
             'object-src' => ["'none'"],
             'frame-ancestors' => ["'self'"],
+            // Seed 'self' so that adding a service frame host does not drop
+            // same-origin framing. With no frame host this is equivalent to the
+            // child-src/default-src 'self' fallback.
+            'frame-src' => ["'self'"],
             'form-action' => ["'self'"],
             'worker-src' => ["'self'", 'blob:'],
         ];
