@@ -51,6 +51,9 @@ final class ServiceSetsTest extends TestCase
             'plausible',
             'active-campaign',
             'sentry-sdk',
+            'algolia',
+            'mapbox',
+            'matomo',
         ] as $expected) {
             self::assertContains($expected, $names);
         }
@@ -63,6 +66,32 @@ final class ServiceSetsTest extends TestCase
 
         $this->expectException(InvalidArgumentException::class);
         ServiceSets::get('active-campaign');
+    }
+
+    public function testMatomoRequiresHost(): void
+    {
+        $set = ServiceSets::get('matomo', ['host' => 'example.matomo.cloud']);
+        self::assertContains('example.matomo.cloud', $set['script-src']);
+        self::assertContains('example.matomo.cloud', $set['connect-src']);
+        self::assertContains('example.matomo.cloud', $set['img-src']);
+
+        $this->expectException(InvalidArgumentException::class);
+        ServiceSets::get('matomo');
+    }
+
+    public function testAlgoliaAndMapboxHosts(): void
+    {
+        $algolia = ServiceSets::get('algolia');
+        self::assertContains('*.algolia.net', $algolia['connect-src']);
+        self::assertContains('*.algolianet.com', $algolia['connect-src']);
+
+        $mapbox = ServiceSets::get('mapbox');
+        self::assertContains('api.mapbox.com', $mapbox['connect-src']);
+        self::assertContains('events.mapbox.com', $mapbox['connect-src']);
+        self::assertContains('api.mapbox.com', $mapbox['img-src']);
+        // The legacy tiles.mapbox.com host is deliberately not carried; current
+        // GL JS consolidates all tile traffic under api.mapbox.com.
+        self::assertNotContains('*.tiles.mapbox.com', $mapbox['connect-src']);
     }
 
     public function testGa4CoversBareAnalyticsApex(): void
