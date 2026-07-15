@@ -74,6 +74,24 @@ final class ServiceSetsTest extends TestCase
         self::assertContains('analytics.google.com', $connect);
     }
 
+    public function testYoutubeCoversFullVideoEmbed(): void
+    {
+        $set = ServiceSets::get('youtube');
+
+        // iframe API script + player.
+        self::assertContains('www.youtube.com', $set['script-src']);
+        self::assertContains('s.ytimg.com', $set['script-src']);
+        // Poster thumbnails.
+        self::assertContains('*.ytimg.com', $set['img-src']);
+        // Player iframe.
+        self::assertContains('*.youtube.com', $set['frame-src']);
+        self::assertContains('www.youtube-nocookie.com', $set['frame-src']);
+        // Video streams over connect + media, with same-origin media kept.
+        self::assertContains('*.googlevideo.com', $set['connect-src']);
+        self::assertContains('*.googlevideo.com', $set['media-src']);
+        self::assertContains("'self'", $set['media-src']);
+    }
+
     public function testUnknownServiceThrows(): void
     {
         $this->expectException(InvalidArgumentException::class);
