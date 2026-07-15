@@ -238,6 +238,29 @@ final class ServiceSets
             'ipify' => [
                 'connect-src' => ['api.ipify.org', 'api64.ipify.org'],
             ],
+
+            // Algolia search. The client talks to the app's DSN host and the
+            // *.algolianet.com retry hosts over XHR; Insights posts to *.algolia.io.
+            // The InstantSearch/autocomplete JS itself is normally bundled, so no
+            // script host is included by default (a project loading it from a CDN
+            // adds that via jsdelivr/cdnjs or add()).
+            'algolia' => [
+                'connect-src' => ['*.algolia.net', '*.algolianet.com', '*.algolia.io'],
+            ],
+
+            // Mapbox. GL JS fetches tiles, styles, fonts and sprites from
+            // api.mapbox.com over XHR (connect-src) and renders them on a canvas,
+            // so it needs no image host: the base policy's img-src data:/blob: and
+            // worker-src blob: already cover its canvas and blob: workers.
+            // events.mapbox.com is GL JS telemetry. api.mapbox.com stays in img-src
+            // for the Static Images API, which is loaded as a plain <img>. GL JS on
+            // the Standard style or 3D models additionally needs script-src
+            // 'wasm-unsafe-eval'; add that per project with ->add() when used.
+            'mapbox' => [
+                'script-src' => ['api.mapbox.com'],
+                'img-src' => ['api.mapbox.com'],
+                'connect-src' => ['api.mapbox.com', 'events.mapbox.com'],
+            ],
         ];
     }
 
@@ -260,6 +283,16 @@ final class ServiceSets
             // (<account>.activehosted.com). No public default; host required.
             'active-campaign' => static fn (string $host): array => [
                 'script-src' => [$host],
+                'connect-src' => [$host],
+            ],
+
+            // Matomo analytics: a self-hosted instance or an account-scoped Matomo
+            // Cloud subdomain (<account>.matomo.cloud). No public default; host
+            // required. Loads matomo.js, posts to matomo.php and drops a tracking
+            // pixel, so the host goes in script-, connect- and img-src.
+            'matomo' => static fn (string $host): array => [
+                'script-src' => [$host],
+                'img-src' => [$host],
                 'connect-src' => [$host],
             ],
         ];
