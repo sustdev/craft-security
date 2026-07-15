@@ -213,15 +213,20 @@ final class ServiceSets
                 'script-src' => ['code.jquery.com'],
             ],
 
-            // Full YouTube video embed: the iframe API script (www.youtube.com
-            // redirects to s.ytimg.com), the player iframe (privacy-enhanced
-            // nocookie host), the poster thumbnails (ytimg), and the video
-            // streams (googlevideo) over connect-src + media-src.
+            // YouTube embed, parent-page scope only. A cross-origin iframe runs
+            // in its own browsing context with its own CSP, so the embedding
+            // page's policy governs only what that page itself loads:
+            //  - frame-src: the player iframe (privacy-enhanced nocookie host).
+            //  - img-src: the poster thumbnail the page renders (ytimg).
+            //  - script-src: the JS IFrame Player API, if the page loads it
+            //    (www.youtube.com/iframe_api pulls the widget from s.ytimg.com).
+            // The in-iframe video streams (*.googlevideo.com) load inside the
+            // iframe's own context, not the parent, so connect-src/media-src are
+            // intentionally not here. A project that measures a real parent-side
+            // need (a lazy-load facade lib, an unusual integration) adds them.
             'youtube' => [
                 'script-src' => ['www.youtube.com', 's.ytimg.com'],
                 'img-src' => ['*.ytimg.com'],
-                'connect-src' => ['*.googlevideo.com', 'www.youtube.com'],
-                'media-src' => ["'self'", 'blob:', '*.googlevideo.com'],
                 'frame-src' => ['*.youtube.com', 'www.youtube-nocookie.com'],
             ],
 

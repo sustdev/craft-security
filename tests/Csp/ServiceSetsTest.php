@@ -74,22 +74,22 @@ final class ServiceSetsTest extends TestCase
         self::assertContains('analytics.google.com', $connect);
     }
 
-    public function testYoutubeCoversFullVideoEmbed(): void
+    public function testYoutubeCoversParentScopedEmbedHosts(): void
     {
         $set = ServiceSets::get('youtube');
 
-        // iframe API script + player.
+        // JS IFrame Player API script, loaded by the embedding page.
         self::assertContains('www.youtube.com', $set['script-src']);
         self::assertContains('s.ytimg.com', $set['script-src']);
-        // Poster thumbnails.
+        // Poster thumbnail the page renders.
         self::assertContains('*.ytimg.com', $set['img-src']);
-        // Player iframe.
+        // The player iframe.
         self::assertContains('*.youtube.com', $set['frame-src']);
         self::assertContains('www.youtube-nocookie.com', $set['frame-src']);
-        // Video streams over connect + media, with same-origin media kept.
-        self::assertContains('*.googlevideo.com', $set['connect-src']);
-        self::assertContains('*.googlevideo.com', $set['media-src']);
-        self::assertContains("'self'", $set['media-src']);
+        // The in-iframe video streams (*.googlevideo.com) load in the iframe's
+        // own context, not the parent, so the set must not add these directives.
+        self::assertArrayNotHasKey('connect-src', $set);
+        self::assertArrayNotHasKey('media-src', $set);
     }
 
     public function testUnknownServiceThrows(): void
