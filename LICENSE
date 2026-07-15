@@ -1,0 +1,21 @@
+Copyright (c) 2026 Sustainable Developer (Niek ten Hoopen)
+All rights reserved.
+
+This software is proprietary. It is built for websites managed by
+Sustainable Developer and connects to the Sustdev Insights monitoring
+platform.
+
+Permitted:
+- Inspection of source code
+- Use on websites managed by or in cooperation with Sustainable Developer
+- Local development, testing, continuous integration and staging
+  environments for those websites
+
+Prohibited without written permission:
+- Use in any other production environment
+- Redistribution, sublicensing, or resale
+- Creating derivative works for distribution
+
+This software is provided "AS IS", without warranty of any kind, express or
+implied. The author shall not be liable for any damages arising from use of
+this software.

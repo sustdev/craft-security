@@ -1,0 +1,22 @@
+{
+    "name": "sustdev/craft-security",
+    "description": "Server-side security hardening for Craft: enforceable password complexity, configurable per site.",
+    "type": "craft-plugin",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2",
+        "craftcms/cms": "^5.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "sustdev\\security\\": "src/"
+        }
+    },
+    "extra": {
+        "handle": "security",
+        "name": "Sustdev Security",
+        "developer": "sustdev",
+        "documentationUrl": "https://github.com/sustdev/craft-security",
+        "class": "sustdev\\security\\Plugin"
+    }
+}
