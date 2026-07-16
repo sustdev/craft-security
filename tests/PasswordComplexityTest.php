@@ -37,6 +37,10 @@ final class PasswordComplexityTest extends TestCase
         self::assertFalse($policy['requireUppercase']);
         self::assertFalse($policy['requireNumber']);
         self::assertFalse($policy['requireSymbol']);
+        // No constraints: a client mirroring these must not out-validate the
+        // server (which enforces nothing extra while complexity is off).
+        self::assertSame(0, $policy['minLength']);
+        self::assertSame(PHP_INT_MAX, $policy['maxLength']);
     }
 
     public function testPolicyMatchesTunedMinOnlyPolicy(): void

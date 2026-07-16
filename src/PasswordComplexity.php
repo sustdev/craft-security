@@ -79,18 +79,34 @@ class PasswordComplexity
      */
     public static function policy(Settings $settings): array
     {
-        $enabled = $settings->passwordComplexity;
+        if (!$settings->passwordComplexity) {
+            // The plugin adds no rules when complexity is off (Craft's own
+            // minimal validation still runs server-side). Report an inactive
+            // policy with no length or class constraints, so a client that
+            // mirrors these fields cannot reject a password the plugin would
+            // accept, even if it ignores the `enabled` flag.
+            return [
+                'enabled' => false,
+                'minLength' => 0,
+                'maxLength' => PHP_INT_MAX,
+                'requireLowercase' => false,
+                'requireUppercase' => false,
+                'requireNumber' => false,
+                'requireSymbol' => false,
+            ];
+        }
+
         $min = $settings->passwordMinLength;
 
         return [
-            'enabled' => $enabled,
+            'enabled' => true,
             'minLength' => $min,
             // Mirror rules(): max is clamped to at least min.
             'maxLength' => max($min, $settings->passwordMaxLength),
-            'requireLowercase' => $enabled && $settings->passwordRequireLowercase,
-            'requireUppercase' => $enabled && $settings->passwordRequireUppercase,
-            'requireNumber' => $enabled && $settings->passwordRequireNumber,
-            'requireSymbol' => $enabled && $settings->passwordRequireSymbol,
+            'requireLowercase' => $settings->passwordRequireLowercase,
+            'requireUppercase' => $settings->passwordRequireUppercase,
+            'requireNumber' => $settings->passwordRequireNumber,
+            'requireSymbol' => $settings->passwordRequireSymbol,
         ];
     }
 

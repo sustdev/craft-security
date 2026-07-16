@@ -44,7 +44,9 @@ $policy = \sustdev\security\Plugin::getInstance()->getPasswordPolicy();
 //  'requireLowercase' => bool, 'requireUppercase' => bool,
 //  'requireNumber' => bool, 'requireSymbol' => bool]
 // The four require* flags follow config/security.php (all true by default;
-// the example below reflects a min-length-only tuning).
+// the example below reflects a min-length-only tuning). When complexity is
+// disabled, `enabled` is false and the policy reports no constraints
+// (minLength 0, no max), so a client mirror never out-validates the server.
 
 $hint = \sustdev\security\Plugin::getInstance()->getPasswordRequirementsText();
 // e.g. "at least 8 characters" for a min-length-only policy, or
