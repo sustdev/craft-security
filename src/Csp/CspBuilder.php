@@ -77,9 +77,6 @@ final class CspBuilder
     /** @var list<string> */
     private array $scriptHashes = [];
 
-    /** @var list<string> */
-    private array $scriptAttrHashes = [];
-
     private ?string $reportUri = null;
 
     public function __construct(
@@ -160,13 +157,16 @@ final class CspBuilder
     }
 
     /**
-     * Register a hash for an inline event handler attribute (e.g. the onload on
-     * an async CSS link). Applied to script-src-attr in production; in dev the
-     * directive stays absent, so handlers fall back to script-src 'unsafe-inline'.
+     * Whitelist an inline event handler attribute (e.g. the onload on an async
+     * CSS link) by hash. No-op in dev, where script-src carries 'unsafe-inline'
+     * and already covers handlers; emitting the directive there would supersede
+     * that and block every handler this hash does not match.
      *
      * script-src-attr governs event handler attributes only and supersedes
      * script-src for them, so the script element hashes registered with
-     * scriptHash() stay ineligible as handler bodies.
+     * scriptHash() stay ineligible as handler bodies. 'unsafe-hashes' is what
+     * makes a hash source eligible to match a handler attribute at all; on its
+     * own it allows nothing.
      *
      * Hash a handler body (the attribute value, verbatim) with:
      *   printf "%s" "this.media='all'" | openssl dgst -sha256 -binary | openssl base64
@@ -176,9 +176,11 @@ final class CspBuilder
      */
     public function scriptAttrHash(string ...$hashes): self
     {
-        $this->scriptAttrHashes = array_merge($this->scriptAttrHashes, $hashes);
+        if ($this->isDev || $hashes === []) {
+            return $this;
+        }
 
-        return $this;
+        return $this->add('script-src-attr', "'unsafe-hashes'", ...$hashes);
     }
 
     /**
@@ -241,19 +243,6 @@ final class CspBuilder
             $directives['script-src'],
             $this->isDev ? ["'unsafe-inline'"] : $this->scriptHashes,
         );
-
-        // script-src-attr is emitted only when a project registers handler
-        // hashes. While absent, event handler attributes fall back to
-        // script-src, which is what every project without scriptAttrHash() has
-        // today. 'unsafe-hashes' is what makes a hash source eligible to match
-        // a handler attribute at all; on its own it allows nothing.
-        if (!$this->isDev && $this->scriptAttrHashes !== []) {
-            $directives['script-src-attr'] = array_merge(
-                $directives['script-src-attr'] ?? [],
-                ["'unsafe-hashes'"],
-                $this->scriptAttrHashes,
-            );
-        }
 
         $result = [];
         foreach (self::ORDER as $name) {
