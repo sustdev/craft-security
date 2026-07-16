@@ -102,6 +102,88 @@ final class CspBuilderTest extends TestCase
         self::assertStringNotContainsString($hash, $dev['script-src']);
     }
 
+    public function testScriptSrcAttrIsAbsentUntilAHandlerHashIsRegistered(): void
+    {
+        // Regression guard for the projects sharing this package: adding
+        // script-src-attr to the emission order must not change a single
+        // existing policy. Absent means event handlers keep falling back to
+        // script-src, which is the behaviour every project has today.
+        $map = $this->directiveMap(CspBuilder::make()->use('google-ads')->scriptHash("'sha256-abc123'"));
+
+        self::assertArrayNotHasKey('script-src-attr', $map);
+    }
+
+    public function testScriptAttrHashIsScopedToScriptSrcAttrInProduction(): void
+    {
+        $handlerHash = "'sha256-MhtPZXr7+LpJUY5qtMutB+qWfQtMaPccfe7QXtCcEYc='";
+        $scriptHash = "'sha256-abc123'";
+
+        $map = $this->directiveMap(
+            CspBuilder::make(isDev: false)->scriptHash($scriptHash)->scriptAttrHash($handlerHash),
+        );
+
+        $attrTokens = explode(' ', $map['script-src-attr']);
+        self::assertContains("'unsafe-hashes'", $attrTokens);
+        self::assertContains($handlerHash, $attrTokens);
+
+        // The handler hash must not leak into script-src, and 'unsafe-hashes'
+        // must not either: on script-src it would make every script element
+        // hash valid as an event handler body too.
+        self::assertStringNotContainsString($handlerHash, $map['script-src']);
+        self::assertStringNotContainsString("'unsafe-hashes'", $map['script-src']);
+
+        // Script elements resolve via script-src-elem -> script-src, so
+        // declaring script-src-attr must leave script-src untouched.
+        self::assertStringContainsString($scriptHash, $map['script-src']);
+    }
+
+    public function testScriptAttrHashStaysAbsentInDev(): void
+    {
+        // In dev script-src carries 'unsafe-inline', which already covers
+        // handlers. Emitting script-src-attr there would supersede that and
+        // block every handler the hash does not match.
+        $map = $this->directiveMap(
+            CspBuilder::make(isDev: true)->scriptAttrHash("'sha256-MhtPZXr7+LpJUY5qtMutB+qWfQtMaPccfe7QXtCcEYc='"),
+        );
+
+        self::assertArrayNotHasKey('script-src-attr', $map);
+        self::assertStringContainsString("'unsafe-inline'", $map['script-src']);
+    }
+
+    public function testScriptAttrHashDedupesUnsafeHashesAcrossCalls(): void
+    {
+        $map = $this->directiveMap(
+            CspBuilder::make()->scriptAttrHash("'sha256-aaa='")->scriptAttrHash("'sha256-bbb='"),
+        );
+
+        self::assertSame("'unsafe-hashes' 'sha256-aaa=' 'sha256-bbb='", $map['script-src-attr']);
+    }
+
+    public function testScriptAttrHashWithNoHashesEmitsNothing(): void
+    {
+        // 'unsafe-hashes' on its own allows nothing, but emitting the directive
+        // would still supersede script-src for handlers and block them all.
+        $map = $this->directiveMap(CspBuilder::make()->scriptAttrHash());
+
+        self::assertArrayNotHasKey('script-src-attr', $map);
+    }
+
+    public function testAddOwnsScriptSrcAttrTokensInEveryEnvironment(): void
+    {
+        // add() is the escape hatch: whatever a project puts in a directive is
+        // emitted, in dev too. Guarding this in directives() would have made
+        // scriptAttrHash() and add() disagree about who controls the directive,
+        // so scriptAttrHash() now writes through add() and there is one owner.
+        // 'none' is the real use for this: hard-block every inline handler.
+        foreach ([true, false] as $isDev) {
+            $map = $this->directiveMap(
+                CspBuilder::make(isDev: $isDev)->add('script-src-attr', "'none'"),
+            );
+
+            self::assertSame("'none'", $map['script-src-attr']);
+        }
+    }
+
     public function testViteDevServerOnlyAppliesInDev(): void
     {
         $host = 'https://project.ddev.site:3000';

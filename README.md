@@ -72,6 +72,26 @@ project or customer specific (self-hosted analytics hosts, CDN origins, sibling
 domains, Sentry DSN keys, GTM container hashes, one-off integrations) is passed in
 per project with `add()` / `scriptHash()`, never baked into this package.
 
+### Inline event handler attributes
+
+A strict `script-src` blocks inline handlers (`onload=`, `onclick=`). To keep one
+specific handler working, register its hash with `scriptAttrHash()`. That emits a
+`script-src-attr` directive holding `'unsafe-hashes'` plus the hash, which governs
+handler attributes *only*, so the `scriptHash()` entries on `script-src` stay
+ineligible as handler bodies. Without a `scriptAttrHash()` call the directive is
+never emitted and handlers keep falling back to `script-src`.
+
+Hash the attribute value verbatim:
+
+```
+printf "%s" "this.media='all'" | openssl dgst -sha256 -binary | openssl base64
+```
+
+Hash a snippet the project itself renders, not one a plugin emits: a plugin
+upgrade can change its own bytes and break the hash silently. Where a plugin lets
+you supply the attribute (Vite's `craft.vite.script()` takes `$cssTagAttrs`), pass
+your own and hash that.
+
 ### Usage (config/sherlock.php)
 
 ```php
@@ -91,6 +111,7 @@ $csp = CspBuilder::make($isDev)
     ->use('plausible', ['host' => 'privacy.example.com']) // self-hosted instance
     ->add('img-src', $cloudFrontOrigin)                    // project-specific host
     ->scriptHash("'sha256-...'")                           // inline GTM bootstrap, prod only
+    ->scriptAttrHash("'sha256-...'")                       // inline onload= handler, prod only
     ->viteDevServer($isDev ? App::env('PRIMARY_SITE_URL') . ':3000' : '');
 
 return [

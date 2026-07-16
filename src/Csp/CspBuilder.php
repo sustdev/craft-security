@@ -15,8 +15,9 @@ use InvalidArgumentException;
  *
  * Project specific hosts (CDN origins, self-hosted analytics, sibling domains,
  * one-off integrations) are added with add(); inline script hashes with
- * scriptHash(). Enforcement posture (enabled/enforce) stays with the project,
- * because it differs per environment.
+ * scriptHash(), and inline event handler attribute hashes with scriptAttrHash().
+ * Enforcement posture (enabled/enforce) stays with the project, because it
+ * differs per environment.
  *
  * Example (config/sherlock.php):
  *
@@ -31,6 +32,7 @@ use InvalidArgumentException;
  *       ->use('plausible', ['host' => 'privacy.example.com'])
  *       ->add('img-src', $cloudFrontOrigin)
  *       ->scriptHash("'sha256-...'")
+ *       ->scriptAttrHash("'sha256-...'")
  *       ->viteDevServer($viteHost);
  *
  *   return ['*' => ['contentSecurityPolicySettings' => [
@@ -51,6 +53,7 @@ final class CspBuilder
     private const ORDER = [
         'default-src',
         'script-src',
+        'script-src-attr',
         'style-src',
         'font-src',
         'img-src',
@@ -151,6 +154,33 @@ final class CspBuilder
         $this->scriptHashes = array_merge($this->scriptHashes, $hashes);
 
         return $this;
+    }
+
+    /**
+     * Whitelist an inline event handler attribute (e.g. the onload on an async
+     * CSS link) by hash. No-op in dev, where script-src carries 'unsafe-inline'
+     * and already covers handlers; emitting the directive there would supersede
+     * that and block every handler this hash does not match.
+     *
+     * script-src-attr governs event handler attributes only and supersedes
+     * script-src for them, so the script element hashes registered with
+     * scriptHash() stay ineligible as handler bodies. 'unsafe-hashes' is what
+     * makes a hash source eligible to match a handler attribute at all; on its
+     * own it allows nothing.
+     *
+     * Hash a handler body (the attribute value, verbatim) with:
+     *   printf "%s" "this.media='all'" | openssl dgst -sha256 -binary | openssl base64
+     *
+     * Hash what the project itself renders, not what a plugin happens to emit:
+     * a plugin upgrade can change its own string and break the hash silently.
+     */
+    public function scriptAttrHash(string ...$hashes): self
+    {
+        if ($this->isDev || $hashes === []) {
+            return $this;
+        }
+
+        return $this->add('script-src-attr', "'unsafe-hashes'", ...$hashes);
     }
 
     /**
