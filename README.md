@@ -31,6 +31,34 @@ defaults and what each does.
 Messages are translatable (English source, Dutch included); override the
 complexity message per site with `passwordMessage`.
 
+### Exposing the policy to a client
+
+Enforcement is server-side, but a form usually validates the password in the
+browser too for instant feedback. To keep that in sync with the server (one
+source of truth), read the policy from the plugin instead of hardcoding it, and
+render it into the page for your client validator to consume:
+
+```php
+$policy = \sustdev\security\Plugin::getInstance()->getPasswordPolicy();
+// Shape: ['enabled' => bool, 'minLength' => int, 'maxLength' => int,
+//  'requireLowercase' => bool, 'requireUppercase' => bool,
+//  'requireNumber' => bool, 'requireSymbol' => bool]
+// The four require* flags follow config/security.php (all true by default;
+// the example below reflects a min-length-only tuning). When complexity is
+// disabled, `enabled` is false and the policy reports no constraints
+// (minLength 0, no max), so a client mirror never out-validates the server.
+
+$hint = \sustdev\security\Plugin::getInstance()->getPasswordRequirementsText();
+// e.g. "at least 8 characters" for a min-length-only policy, or
+// "at least 12 characters, a number, a special character" with classes on.
+// Empty when complexity is disabled.
+```
+
+The policy is derived from the same settings as the validation rules, so raising
+`config/security.php` updates the server, the client mirror and the hint at
+once. The package still renders nothing itself; the project decides how to
+surface the data (e.g. a `type="application/json"` block the form reads).
+
 ## Content-Security-Policy building blocks
 
 A CSP is a shared base plus a set of hosts per third-party service you run. The

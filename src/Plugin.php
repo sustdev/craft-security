@@ -50,4 +50,24 @@ class Plugin extends BasePlugin
     {
         return new Settings();
     }
+
+    /**
+     * The effective password policy as plain data, for exposing to a front end
+     * so a form validates exactly what a server-side save enforces.
+     *
+     * @return array{enabled: bool, minLength: int, maxLength: int, requireLowercase: bool, requireUppercase: bool, requireNumber: bool, requireSymbol: bool}
+     */
+    public function getPasswordPolicy(): array
+    {
+        return PasswordComplexity::policy($this->getSettings());
+    }
+
+    /**
+     * Human-readable password requirements for the current settings (empty when
+     * complexity is disabled).
+     */
+    public function getPasswordRequirementsText(): string
+    {
+        return PasswordComplexity::requirementsText($this->getSettings());
+    }
 }
