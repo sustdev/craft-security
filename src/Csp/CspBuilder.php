@@ -15,8 +15,9 @@ use InvalidArgumentException;
  *
  * Project specific hosts (CDN origins, self-hosted analytics, sibling domains,
  * one-off integrations) are added with add(); inline script hashes with
- * scriptHash(). Enforcement posture (enabled/enforce) stays with the project,
- * because it differs per environment.
+ * scriptHash(), and inline event handler attribute hashes with scriptAttrHash().
+ * Enforcement posture (enabled/enforce) stays with the project, because it
+ * differs per environment.
  *
  * Example (config/sherlock.php):
  *
@@ -31,6 +32,7 @@ use InvalidArgumentException;
  *       ->use('plausible', ['host' => 'privacy.example.com'])
  *       ->add('img-src', $cloudFrontOrigin)
  *       ->scriptHash("'sha256-...'")
+ *       ->scriptAttrHash("'sha256-...'")
  *       ->viteDevServer($viteHost);
  *
  *   return ['*' => ['contentSecurityPolicySettings' => [
@@ -51,6 +53,7 @@ final class CspBuilder
     private const ORDER = [
         'default-src',
         'script-src',
+        'script-src-attr',
         'style-src',
         'font-src',
         'img-src',
@@ -73,6 +76,9 @@ final class CspBuilder
 
     /** @var list<string> */
     private array $scriptHashes = [];
+
+    /** @var list<string> */
+    private array $scriptAttrHashes = [];
 
     private ?string $reportUri = null;
 
@@ -154,6 +160,28 @@ final class CspBuilder
     }
 
     /**
+     * Register a hash for an inline event handler attribute (e.g. the onload on
+     * an async CSS link). Applied to script-src-attr in production; in dev the
+     * directive stays absent, so handlers fall back to script-src 'unsafe-inline'.
+     *
+     * script-src-attr governs event handler attributes only and supersedes
+     * script-src for them, so the script element hashes registered with
+     * scriptHash() stay ineligible as handler bodies.
+     *
+     * Hash a handler body (the attribute value, verbatim) with:
+     *   printf "%s" "this.media='all'" | openssl dgst -sha256 -binary | openssl base64
+     *
+     * Hash what the project itself renders, not what a plugin happens to emit:
+     * a plugin upgrade can change its own string and break the hash silently.
+     */
+    public function scriptAttrHash(string ...$hashes): self
+    {
+        $this->scriptAttrHashes = array_merge($this->scriptAttrHashes, $hashes);
+
+        return $this;
+    }
+
+    /**
      * Whitelist the Vite dev server. No-op outside dev.
      */
     public function viteDevServer(string $host): self
@@ -213,6 +241,19 @@ final class CspBuilder
             $directives['script-src'],
             $this->isDev ? ["'unsafe-inline'"] : $this->scriptHashes,
         );
+
+        // script-src-attr is emitted only when a project registers handler
+        // hashes. While absent, event handler attributes fall back to
+        // script-src, which is what every project without scriptAttrHash() has
+        // today. 'unsafe-hashes' is what makes a hash source eligible to match
+        // a handler attribute at all; on its own it allows nothing.
+        if (!$this->isDev && $this->scriptAttrHashes !== []) {
+            $directives['script-src-attr'] = array_merge(
+                $directives['script-src-attr'] ?? [],
+                ["'unsafe-hashes'"],
+                $this->scriptAttrHashes,
+            );
+        }
 
         $result = [];
         foreach (self::ORDER as $name) {
