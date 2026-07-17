@@ -130,7 +130,8 @@ return [
 ### Available services
 
 `sentry-sdk`, `google-tag-manager`, `google-analytics`, `google-ads`,
-`google-maps`, `google-maps-embed`, `recaptcha`, `turnstile`, `meta-pixel`,
+`google-maps`, `google-maps-embed`, `recaptcha`, `turnstile`, `mailerlite`,
+`meta-pixel`,
 `microsoft-clarity`, `bing-ads`, `linkedin-insight`, `cookiebot`, `mouseflow`,
 `trustpilot`, `cdnjs`, `jsdelivr`, `jquery`, `youtube`, `gravatar`,
 `google-user-content`, `google-apps-script`, `ipify`, `algolia`, `mapbox`,
