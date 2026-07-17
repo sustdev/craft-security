@@ -154,6 +154,8 @@ final class ServiceSets
 
             'recaptcha' => [
                 'script-src' => ['www.google.com', 'www.gstatic.com', 'www.recaptcha.net'],
+                // reCAPTCHA verifies the token via an XHR to www.google.com.
+                'connect-src' => ['www.google.com'],
                 'frame-src' => ['www.google.com', 'recaptcha.google.com'],
             ],
 
@@ -161,6 +163,16 @@ final class ServiceSets
                 'script-src' => ['challenges.cloudflare.com'],
                 'connect-src' => ['challenges.cloudflare.com'],
                 'frame-src' => ['challenges.cloudflare.com'],
+            ],
+
+            // MailerLite embedded signup form: its scripts and jQuery/inputmask
+            // (mlcdn), stylesheets, webfonts and form submit. Pair with the
+            // recaptcha set, which MailerLite forms use for spam protection.
+            'mailerlite' => [
+                'script-src' => ['*.mailerlite.com', '*.mlcdn.com'],
+                'style-src' => ['*.mailerlite.com', '*.mlcdn.com'],
+                'font-src' => ['*.mailerlite.com'],
+                'connect-src' => ['*.mailerlite.com'],
             ],
 
             'meta-pixel' => [

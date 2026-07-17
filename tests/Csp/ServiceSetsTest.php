@@ -34,6 +34,7 @@ final class ServiceSetsTest extends TestCase
             'google-maps-embed',
             'recaptcha',
             'turnstile',
+            'mailerlite',
             'meta-pixel',
             'microsoft-clarity',
             'bing-ads',
