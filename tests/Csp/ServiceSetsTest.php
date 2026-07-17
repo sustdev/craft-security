@@ -31,6 +31,7 @@ final class ServiceSetsTest extends TestCase
             'google-analytics',
             'google-ads',
             'google-maps',
+            'google-maps-embed',
             'recaptcha',
             'turnstile',
             'meta-pixel',
@@ -119,6 +120,36 @@ final class ServiceSetsTest extends TestCase
         // own context, not the parent, so the set must not add these directives.
         self::assertArrayNotHasKey('connect-src', $set);
         self::assertArrayNotHasKey('media-src', $set);
+    }
+
+    public function testGoogleMapsEmbedCoversOnlyTheFrameNavigation(): void
+    {
+        $set = ServiceSets::get('google-maps-embed');
+
+        // The iframe src names maps.google.com and lands on www.google.com after
+        // the redirect. frame-src matches the origin after the redirect, so
+        // dropping either host breaks the embed.
+        self::assertContains('maps.google.com', $set['frame-src']);
+        self::assertContains('www.google.com', $set['frame-src']);
+
+        // Everything else the map pulls (the Maps API, gstatic tiles, Google
+        // Fonts) is requested by Google's document inside the iframe, under
+        // Google's policy. The embedding page grants none of it.
+        self::assertSame(['frame-src'], array_keys($set));
+    }
+
+    public function testGoogleMapsEmbedIsNotTheJavaScriptApiSet(): void
+    {
+        // The two Maps variants are separate on purpose: a plain embed needs one
+        // directive, while the JS API set grants six hosts an embed never asks for.
+        $embed = ServiceSets::get('google-maps-embed');
+        $api = ServiceSets::get('google-maps');
+
+        self::assertArrayNotHasKey('script-src', $embed);
+        self::assertContains('maps.googleapis.com', $api['script-src']);
+        // The JS API set frames www.google.com but not maps.google.com, which is
+        // why an embed cannot simply use it.
+        self::assertNotContains('maps.google.com', $api['frame-src']);
     }
 
     public function testUnknownServiceThrows(): void
