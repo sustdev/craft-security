@@ -137,13 +137,13 @@ final class ServiceSets
                 'frame-src' => ['www.google.com'],
             ],
 
-            // The other Maps variant: the classic iframe embed
-            // (maps.google.com/maps?...&output=embed), which the Maps share dialog
-            // hands out. Everything the map pulls is requested by Google's own
-            // document inside the iframe, under Google's policy, so frame-src is
-            // all the embedding page needs. Use this instead of 'google-maps'
-            // unless the project loads the Maps JavaScript API itself: that set
-            // grants six hosts a plain embed never requests.
+            // The other Maps variant: the classic iframe embed, whose src looks
+            // like maps.google.com/maps?...&output=embed. Everything the map pulls
+            // is requested by Google's own document inside the iframe, which ships
+            // its own CSP, so frame-src is all the embedding page needs. Use this
+            // instead of 'google-maps' unless the project loads the Maps
+            // JavaScript API itself: that set grants six hosts a plain embed never
+            // requests.
             //
             // Both hosts are required. The iframe src names maps.google.com, which
             // redirects to www.google.com/maps/embed, and frame-src is matched

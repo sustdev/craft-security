@@ -130,11 +130,14 @@ return [
 ### Available services
 
 `sentry-sdk`, `google-tag-manager`, `google-analytics`, `google-ads`,
-`google-maps`, `recaptcha`, `turnstile`, `meta-pixel`, `microsoft-clarity`,
-`bing-ads`, `linkedin-insight`, `cookiebot`, `mouseflow`, `trustpilot`, `cdnjs`,
-`jsdelivr`, `jquery`, `youtube`, `gravatar`, `google-user-content`,
-`google-apps-script`, `ipify`, `algolia`, `mapbox`, `plausible`,
-`active-campaign`, `matomo`.
+`google-maps`, `google-maps-embed`, `recaptcha`, `turnstile`, `meta-pixel`,
+`microsoft-clarity`, `bing-ads`, `linkedin-insight`, `cookiebot`, `mouseflow`,
+`trustpilot`, `cdnjs`, `jsdelivr`, `jquery`, `youtube`, `gravatar`,
+`google-user-content`, `google-apps-script`, `ipify`, `algolia`, `mapbox`,
+`plausible`, `active-campaign`, `matomo`.
+
+`google-maps` is the Maps JavaScript API; `google-maps-embed` is the classic
+iframe embed, which only needs `frame-src`.
 
 Each set adds its hosts to the correct directives (`ServiceSets` is the source of
 truth). An unknown service name throws, so a typo fails loudly.
