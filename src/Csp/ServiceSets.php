@@ -189,9 +189,13 @@ final class ServiceSets
             ],
 
             'bing-ads' => [
+                // bat.js is served from bat.bing.com, but the UET beacons it
+                // fires (actionp/... pageHide, image + fetch) post to
+                // bat.bing.net, so that host is needed for img-src/connect-src
+                // but not script-src.
                 'script-src' => ['bat.bing.com'],
-                'img-src' => ['bat.bing.com', 'c.bing.com'],
-                'connect-src' => ['bat.bing.com', 'c.bing.com'],
+                'img-src' => ['bat.bing.com', 'bat.bing.net', 'c.bing.com'],
+                'connect-src' => ['bat.bing.com', 'bat.bing.net', 'c.bing.com'],
             ],
 
             'linkedin-insight' => [
