@@ -180,6 +180,10 @@ final class ServiceSets
                 'img-src' => ['*.facebook.com', 'connect.facebook.net'],
                 'connect-src' => ['*.facebook.com', 'connect.facebook.net'],
                 'frame-src' => ['www.facebook.com'],
+                // For larger event payloads the pixel falls back from the image
+                // beacon to a hidden <form> that posts to www.facebook.com/tr
+                // (targeting a hidden iframe), so form-action needs that host.
+                'form-action' => ['www.facebook.com'],
             ],
 
             'microsoft-clarity' => [
