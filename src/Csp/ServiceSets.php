@@ -119,7 +119,12 @@ final class ServiceSets
             // with full-page caching).
             'google-maps' => [
                 'script-src' => ['maps.googleapis.com'],
-                'style-src' => ["'unsafe-inline'"],
+                // The Maps JS API injects a <link> to fonts.googleapis.com for its
+                // UI type (Roboto / Google Sans) and pulls the font files from
+                // fonts.gstatic.com. These are the Maps runtime's own fonts, not
+                // the site's, so they can't be self-hosted.
+                'style-src' => ["'unsafe-inline'", 'fonts.googleapis.com'],
+                'font-src' => ['fonts.gstatic.com'],
                 // Enumerate the specific Maps hosts. A broad '*.googleapis.com'
                 // is deliberately avoided: it also covers storage.googleapis.com
                 // (multi-tenant GCS buckets), a known CSP-allowlist bypass. If
