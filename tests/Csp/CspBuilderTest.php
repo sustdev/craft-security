@@ -221,6 +221,21 @@ final class CspBuilderTest extends TestCase
         self::assertNull(CspBuilder::make()->reportToHeader());
     }
 
+    public function testUpgradeInsecureRequestsEmitsValuelessDirective(): void
+    {
+        // Off by default: the directive is absent.
+        self::assertArrayNotHasKey(
+            'upgrade-insecure-requests',
+            $this->directiveMap(CspBuilder::make()),
+        );
+
+        // Enabled: emitted as a valueless directive (empty value), which
+        // Sherlock renders as just the directive name.
+        $map = $this->directiveMap(CspBuilder::make()->upgradeInsecureRequests());
+        self::assertArrayHasKey('upgrade-insecure-requests', $map);
+        self::assertSame('', $map['upgrade-insecure-requests']);
+    }
+
     public function testUnknownServiceThrows(): void
     {
         $this->expectException(InvalidArgumentException::class);

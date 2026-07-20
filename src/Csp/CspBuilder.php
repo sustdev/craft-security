@@ -33,6 +33,7 @@ use InvalidArgumentException;
  *       ->add('img-src', $cloudFrontOrigin)
  *       ->scriptHash("'sha256-...'")
  *       ->scriptAttrHash("'sha256-...'")
+ *       ->upgradeInsecureRequests()
  *       ->viteDevServer($viteHost);
  *
  *   return ['*' => ['contentSecurityPolicySettings' => [
@@ -78,6 +79,8 @@ final class CspBuilder
     private array $scriptHashes = [];
 
     private ?string $reportUri = null;
+
+    private bool $upgradeInsecureRequests = false;
 
     public function __construct(
         private readonly bool $isDev = false,
@@ -211,6 +214,20 @@ final class CspBuilder
     }
 
     /**
+     * Emit the valueless upgrade-insecure-requests directive, which tells the
+     * browser to upgrade every http:// subresource request on the page to
+     * https:// (protection against passive mixed content). It upgrades, it does
+     * not block, so a resource that only exists over http fails after the
+     * upgrade; that is rare and usually the desired outcome.
+     */
+    public function upgradeInsecureRequests(bool $enabled = true): self
+    {
+        $this->upgradeInsecureRequests = $enabled;
+
+        return $this;
+    }
+
+    /**
      * JSON value for a Report-To response header pointing at the report endpoint.
      * Returns null when no report URI is set.
      */
@@ -251,6 +268,12 @@ final class CspBuilder
                 continue;
             }
             $result[] = [true, $name, implode(' ', $tokens)];
+        }
+
+        // Valueless directive: it carries no token list, so it is emitted here
+        // rather than through the ORDER loop (which skips empty directives).
+        if ($this->upgradeInsecureRequests) {
+            $result[] = [true, 'upgrade-insecure-requests', ''];
         }
 
         if ($this->reportUri !== null) {
