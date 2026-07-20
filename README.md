@@ -133,7 +133,7 @@ return [
 `google-maps`, `google-maps-embed`, `recaptcha`, `turnstile`, `mailerlite`,
 `meta-pixel`,
 `microsoft-clarity`, `bing-ads`, `linkedin-insight`, `cookiebot`, `mouseflow`,
-`trustpilot`, `cdnjs`, `jsdelivr`, `jquery`, `youtube`, `gravatar`,
+`trustpilot`, `cdnjs`, `jsdelivr`, `jquery`, `youtube`, `vimeo`, `gravatar`,
 `google-user-content`, `google-apps-script`, `ipify`, `algolia`, `mapbox`,
 `plausible`, `active-campaign`, `matomo`.
 

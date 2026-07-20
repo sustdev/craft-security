@@ -270,6 +270,25 @@ final class ServiceSets
                 'frame-src' => ['*.youtube.com', 'www.youtube-nocookie.com'],
             ],
 
+            // Vimeo embed, parent-page scope only (same reasoning as youtube
+            // above: a cross-origin iframe carries its own CSP):
+            //  - frame-src: the player iframe (player.vimeo.com). This is all a
+            //    raw <iframe src="//player.vimeo.com/video/..."> embed needs, and
+            //    is what was measured on a real embed.
+            //  - script-src: the Player SDK, if the page loads it
+            //    (player.vimeo.com/api/player.js) to control the iframe from the
+            //    parent. Same host as the frame.
+            //  - img-src: the poster thumbnail a facade/lazy-load renders on the
+            //    page itself (i.vimeocdn.com), if used.
+            // The in-iframe assets (f.vimeocdn.com player scripts/css, the video
+            // streams) load inside the iframe's own context, not the parent, so
+            // they are intentionally not here.
+            'vimeo' => [
+                'script-src' => ['player.vimeo.com'],
+                'img-src' => ['i.vimeocdn.com'],
+                'frame-src' => ['player.vimeo.com'],
+            ],
+
             // Gravatar avatar images.
             'gravatar' => [
                 'img-src' => ['*.gravatar.com'],
