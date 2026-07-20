@@ -46,6 +46,7 @@ final class ServiceSetsTest extends TestCase
             'jsdelivr',
             'jquery',
             'youtube',
+            'vimeo',
             'gravatar',
             'google-user-content',
             'google-apps-script',
@@ -121,6 +122,24 @@ final class ServiceSetsTest extends TestCase
         // own context, not the parent, so the set must not add these directives.
         self::assertArrayNotHasKey('connect-src', $set);
         self::assertArrayNotHasKey('media-src', $set);
+    }
+
+    public function testVimeoCoversParentScopedEmbedHosts(): void
+    {
+        $set = ServiceSets::get('vimeo');
+
+        // Player SDK script, loaded by the embedding page.
+        self::assertContains('player.vimeo.com', $set['script-src']);
+        // Poster thumbnail the page renders.
+        self::assertContains('i.vimeocdn.com', $set['img-src']);
+        // The player iframe.
+        self::assertContains('player.vimeo.com', $set['frame-src']);
+        // The in-iframe player assets (f.vimeocdn.com) and video streams load in
+        // the iframe's own context, not the parent, so the set must not add
+        // these hosts or directives.
+        self::assertArrayNotHasKey('connect-src', $set);
+        self::assertArrayNotHasKey('media-src', $set);
+        self::assertNotContains('f.vimeocdn.com', $set['script-src']);
     }
 
     public function testGoogleMapsEmbedCoversOnlyTheFrameNavigation(): void
