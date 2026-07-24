@@ -142,6 +142,21 @@ final class ServiceSets
                 'frame-src' => ['www.google.com'],
             ],
 
+            // Google Places API, the newer places.googleapis.com v1 endpoint (not
+            // the classic maps/api/place, which lives under maps.googleapis.com and
+            // is already covered by google-maps). Its own set rather than folded
+            // into google-maps because Places is a separate service: a form's
+            // address autocomplete uses it with no map on the page. The Maps JS
+            // library also calls it once a site enables its Places features, but a
+            // site can use it on its own too, so declare it where it is used.
+            //  - connect-src: the RPC lookups (place details, autocomplete). This
+            //    is what was measured blocked. Place-photo hosts on img-src are
+            //    left out until a real embed reports one, the same
+            //    enumerate-what-is-seen approach as google-maps above.
+            'google-places' => [
+                'connect-src' => ['places.googleapis.com'],
+            ],
+
             // The other Maps variant: the classic iframe embed, whose src looks
             // like maps.google.com/maps?...&output=embed. Everything the map pulls
             // is requested by Google's own document inside the iframe, which ships
