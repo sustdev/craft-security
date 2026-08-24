@@ -271,7 +271,17 @@ final class ServiceSets
             // YouTube embed, parent-page scope only. A cross-origin iframe runs
             // in its own browsing context with its own CSP, so the embedding
             // page's policy governs only what that page itself loads:
-            //  - frame-src: the player iframe (privacy-enhanced nocookie host).
+            //  - frame-src: the player iframe (privacy-enhanced nocookie host),
+            //    plus the youtu.be short link. frame-src governs every navigation
+            //    of the nested browsing context, not just the initial src, so the
+            //    player navigating itself to the short link is checked against it
+            //    too. youtu.be is a separate registrable domain, so the
+            //    *.youtube.com wildcard does not cover it. Measured from an
+            //    enforced frame-src violation reported for youtu.be on a page
+            //    whose only embed was a plain youtube.com/embed iframe; what
+            //    triggered that navigation was not captured. The reported URI
+            //    carried no path because blocked-uri is stripped to the origin
+            //    when the blocked resource is cross-origin.
             //  - img-src: the poster thumbnail the page renders (ytimg).
             //  - script-src: the JS IFrame Player API, if the page loads it
             //    (www.youtube.com/iframe_api pulls the widget from s.ytimg.com).
@@ -282,7 +292,7 @@ final class ServiceSets
             'youtube' => [
                 'script-src' => ['www.youtube.com', 's.ytimg.com'],
                 'img-src' => ['*.ytimg.com'],
-                'frame-src' => ['*.youtube.com', 'www.youtube-nocookie.com'],
+                'frame-src' => ['*.youtube.com', 'www.youtube-nocookie.com', 'youtu.be'],
             ],
 
             // Vimeo embed, parent-page scope only (same reasoning as youtube
