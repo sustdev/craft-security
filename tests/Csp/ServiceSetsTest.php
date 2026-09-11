@@ -121,6 +121,10 @@ final class ServiceSetsTest extends TestCase
         // The short link the player navigates to when a viewer follows the share
         // or title link. A separate registrable domain, so *.youtube.com misses it.
         self::assertContains('youtu.be', $set['frame-src']);
+        // The player navigating itself here for account-related UI shown to a
+        // signed-in viewer. A different origin than the *.google.* hosts used
+        // elsewhere, so it needs its own entry.
+        self::assertContains('accounts.google.com', $set['frame-src']);
         // The in-iframe video streams (*.googlevideo.com) load in the iframe's
         // own context, not the parent, so the set must not add these directives.
         self::assertArrayNotHasKey('connect-src', $set);
