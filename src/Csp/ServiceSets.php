@@ -196,7 +196,22 @@ final class ServiceSets
             ],
 
             'meta-pixel' => [
-                'script-src' => ['connect.facebook.net'],
+                'script-src' => [
+                    'connect.facebook.net',
+                    // www.facebook.com/signals/iwl.js, seen blocked in CSP
+                    // violation reports from a pixel site. Scoped to the
+                    // /signals/ path rather than all of www.facebook.com.
+                    'https://www.facebook.com/signals/',
+                    // Meta's Conversions API parameter builder, seen blocked in
+                    // the same reports from both jsDelivr and unpkg. Both CDNs
+                    // serve any npm package, so only this package path is
+                    // allowed, never the host. unpkg redirects to a versioned
+                    // URL and CSP ignores the path after a redirect, and the
+                    // path carries no version, so new releases of the package
+                    // load too.
+                    'https://cdn.jsdelivr.net/npm/meta-capi-param-builder-clientjs/',
+                    'https://unpkg.com/meta-capi-param-builder-clientjs/',
+                ],
                 'img-src' => ['*.facebook.com', 'connect.facebook.net'],
                 'connect-src' => ['*.facebook.com', 'connect.facebook.net'],
                 'frame-src' => ['www.facebook.com'],
