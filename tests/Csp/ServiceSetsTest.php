@@ -179,6 +179,22 @@ final class ServiceSetsTest extends TestCase
         self::assertNotContains('maps.google.com', $api['frame-src']);
     }
 
+    public function testMetaPixelAllowsItsCdnScriptsByPackagePathOnly(): void
+    {
+        $scripts = ServiceSets::get('meta-pixel')['script-src'];
+
+        self::assertContains('https://www.facebook.com/signals/', $scripts);
+        self::assertContains('https://cdn.jsdelivr.net/npm/meta-capi-param-builder-clientjs/', $scripts);
+        self::assertContains('https://unpkg.com/meta-capi-param-builder-clientjs/', $scripts);
+
+        // jsDelivr and unpkg serve any npm package, so the bare hosts would allow
+        // arbitrary scripts. Only the package path may be listed.
+        foreach (['cdn.jsdelivr.net', 'unpkg.com', 'www.facebook.com', '*.facebook.com'] as $host) {
+            self::assertNotContains($host, $scripts);
+            self::assertNotContains('https://' . $host, $scripts);
+        }
+    }
+
     public function testUnknownServiceThrows(): void
     {
         $this->expectException(InvalidArgumentException::class);
