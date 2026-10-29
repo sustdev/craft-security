@@ -269,12 +269,17 @@ final class ServiceSets
                 'connect-src' => ['api.leadinfo.com', 'collector.leadinfo.net', 'collector4.leadinfo.net'],
             ],
 
-            // Nimbata call tracking. The account's
-            // script is served from cdn.dni.nimbata.com/<dni-id>.min.js. The
-            // endpoint it posts to is written into that per-account script, so a
-            // project adds it to connect-src with add().
+            // Nimbata call tracking. The account's script is served from
+            // cdn.dni.nimbata.com/<dni-id>.min.js and sends its XHR POSTs to a
+            // CloudFront host named in that script. Public website-scanner
+            // results list the same host for other sites too, so it is likely
+            // shared across accounts, but that is not confirmed. If another
+            // account's script names a different host, add it with add(). Exact
+            // host only: a wildcard on cloudfront.net would allow any AWS
+            // customer's distribution.
             'nimbata' => [
                 'script-src' => ['cdn.dni.nimbata.com'],
+                'connect-src' => ['dakvo8z10w4va.cloudfront.net'],
             ],
 
             'trustpilot' => [
