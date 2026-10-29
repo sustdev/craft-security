@@ -255,6 +255,28 @@ final class ServiceSets
                 'connect-src' => ['*.mouseflow.com'],
             ],
 
+            // Leadinfo B2B visitor identification, core tracker only. ping.js is
+            // served from cdn.leadinfo.net. It fetches its site config from
+            // collector.leadinfo.net and the company lookup from api.leadinfo.com,
+            // sends tracker events to collector.leadinfo.net (POST) and posts to
+            // collector4.leadinfo.net. Leadinfo's own CSP documentation also lists
+            // collector.leadinfo.net for img-src. The optional form and recording
+            // features load further scripts named in the per-site config; a
+            // project that uses them adds those hosts.
+            'leadinfo' => [
+                'script-src' => ['cdn.leadinfo.net'],
+                'img-src' => ['collector.leadinfo.net'],
+                'connect-src' => ['api.leadinfo.com', 'collector.leadinfo.net', 'collector4.leadinfo.net'],
+            ],
+
+            // Nimbata call tracking. The account's
+            // script is served from cdn.dni.nimbata.com/<dni-id>.min.js. The
+            // endpoint it posts to is written into that per-account script, so a
+            // project adds it to connect-src with add().
+            'nimbata' => [
+                'script-src' => ['cdn.dni.nimbata.com'],
+            ],
+
             'trustpilot' => [
                 'script-src' => ['widget.trustpilot.com', '*.trustpilot.com'],
                 'img-src' => ['*.trustpilot.com'],
