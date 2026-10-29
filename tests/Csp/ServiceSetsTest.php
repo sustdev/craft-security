@@ -41,6 +41,8 @@ final class ServiceSetsTest extends TestCase
             'linkedin-insight',
             'cookiebot',
             'mouseflow',
+            'leadinfo',
+            'nimbata',
             'trustpilot',
             'cdnjs',
             'jsdelivr',
@@ -193,6 +195,16 @@ final class ServiceSetsTest extends TestCase
             self::assertNotContains($host, $scripts);
             self::assertNotContains('https://' . $host, $scripts);
         }
+    }
+
+    public function testLeadinfoAndNimbataHosts(): void
+    {
+        $leadinfo = ServiceSets::get('leadinfo');
+        self::assertSame(['cdn.leadinfo.net'], $leadinfo['script-src']);
+        self::assertContains('collector4.leadinfo.net', $leadinfo['connect-src']);
+        self::assertContains('collector.leadinfo.net', $leadinfo['img-src']);
+
+        self::assertSame(['script-src' => ['cdn.dni.nimbata.com']], ServiceSets::get('nimbata'));
     }
 
     public function testUnknownServiceThrows(): void
