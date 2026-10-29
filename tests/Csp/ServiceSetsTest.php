@@ -204,7 +204,10 @@ final class ServiceSetsTest extends TestCase
         self::assertContains('collector4.leadinfo.net', $leadinfo['connect-src']);
         self::assertContains('collector.leadinfo.net', $leadinfo['img-src']);
 
-        self::assertSame(['script-src' => ['cdn.dni.nimbata.com']], ServiceSets::get('nimbata'));
+        self::assertSame([
+            'script-src' => ['cdn.dni.nimbata.com'],
+            'connect-src' => ['dakvo8z10w4va.cloudfront.net'],
+        ], ServiceSets::get('nimbata'));
     }
 
     public function testUnknownServiceThrows(): void
