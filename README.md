@@ -134,8 +134,8 @@ return [
 `google-maps`, `google-maps-embed`, `recaptcha`, `turnstile`, `mailerlite`,
 `meta-pixel`,
 `microsoft-clarity`, `bing-ads`, `linkedin-insight`, `cookiebot`, `mouseflow`,
-`leadinfo`, `nimbata`, `trustpilot`, `cdnjs`, `jsdelivr`, `jquery`, `youtube`,
-`vimeo`, `gravatar`, `google-user-content`, `google-apps-script`, `ipify`,
+`leadinfo`, `leadinfo-recording`, `nimbata`, `trustpilot`, `cdnjs`, `jsdelivr`,
+`jquery`, `youtube`, `vimeo`, `gravatar`, `google-user-content`, `google-apps-script`, `ipify`,
 `algolia`, `mapbox`, `plausible`, `active-campaign`, `matomo`.
 
 `google-maps` is the Maps JavaScript API; `google-maps-embed` is the classic

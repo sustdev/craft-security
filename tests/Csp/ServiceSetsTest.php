@@ -42,6 +42,7 @@ final class ServiceSetsTest extends TestCase
             'cookiebot',
             'mouseflow',
             'leadinfo',
+            'leadinfo-recording',
             'nimbata',
             'trustpilot',
             'cdnjs',
@@ -203,6 +204,13 @@ final class ServiceSetsTest extends TestCase
         self::assertSame(['cdn.leadinfo.net'], $leadinfo['script-src']);
         self::assertContains('collector4.leadinfo.net', $leadinfo['connect-src']);
         self::assertContains('collector.leadinfo.net', $leadinfo['img-src']);
+
+        // Recording is opt-in per site, so the core set must not carry its hosts.
+        self::assertSame([
+            'script-src' => ['cdn.ldnfrpl.com'],
+            'connect-src' => ['api.ldnfrpl.com', 'li-replay.s3-accelerate.amazonaws.com'],
+        ], ServiceSets::get('leadinfo-recording'));
+        self::assertNotContains('cdn.ldnfrpl.com', $leadinfo['script-src']);
 
         self::assertSame([
             'script-src' => ['cdn.dni.nimbata.com'],
