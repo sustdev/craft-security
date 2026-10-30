@@ -260,13 +260,28 @@ final class ServiceSets
             // collector.leadinfo.net and the company lookup from api.leadinfo.com,
             // sends tracker events to collector.leadinfo.net (POST) and posts to
             // collector4.leadinfo.net. Leadinfo's own CSP documentation also lists
-            // collector.leadinfo.net for img-src. The optional form and recording
-            // features load further scripts named in the per-site config; a
-            // project that uses them adds those hosts.
+            // collector.leadinfo.net for img-src. The optional recording feature
+            // has its own set, 'leadinfo-recording'. The optional form feature
+            // loads further scripts named in the per-site config; a project that
+            // uses it adds those hosts.
             'leadinfo' => [
                 'script-src' => ['cdn.leadinfo.net'],
                 'img-src' => ['collector.leadinfo.net'],
                 'connect-src' => ['api.leadinfo.com', 'collector.leadinfo.net', 'collector4.leadinfo.net'],
+            ],
+
+            // Leadinfo screen recording, on top of 'leadinfo' and only for a site
+            // that has recording switched on in Leadinfo. ping.js then loads
+            // cdn.ldnfrpl.com/rpl/<hash>/rpl.js, which POSTs to
+            // api.ldnfrpl.com/v1/replay/<id> and PUTs the recording to the URL that
+            // call returns. That upload host is not named in the script. Leadinfo's
+            // own CSP documentation lists li-replay.s3-accelerate.amazonaws.com for
+            // connect-src, so that bucket is assumed to be the target; the upload
+            // itself has not been observed. Exact hosts only, not the
+            // *.ldnfrpl.com that documentation suggests.
+            'leadinfo-recording' => [
+                'script-src' => ['cdn.ldnfrpl.com'],
+                'connect-src' => ['api.ldnfrpl.com', 'li-replay.s3-accelerate.amazonaws.com'],
             ],
 
             // Nimbata call tracking. The account's script is served from
